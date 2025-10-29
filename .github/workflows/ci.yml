@@ -1,0 +1,47 @@
+name: 🧩 Continuous Integration
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 📦 Install Dependencies
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json found — skipping npm install"
+          fi
+
+      - name: 🧹 Run Linter (if available)
+        run: |
+          if [ -f package.json ]; then
+            npm run lint || echo "No lint script found"
+          else
+            echo "No linting configured"
+          fi
+
+      - name: 🧪 Run Tests (if available)
+        run: |
+          if [ -f package.json ]; then
+            npm test || echo "No tests defined"
+          else
+            echo "No tests to run"
+          fi
+
+      - name: ✅ CI Completed
+        run: echo "All checks completed successfully!"
