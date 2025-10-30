@@ -7,10 +7,8 @@ on:
       - Assignment02_GithubActions
   workflow_dispatch: {}
 
-
 jobs:
   test-dependency-update:
-    # Run for Dependabot PRs or manual dispatch
     if: github.actor == 'dependabot[bot]' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -21,22 +19,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Run tests
         run: npm test
-
-      - name: Run linter (optional)
-        run: npm run lint || echo "Lint warnings ignored"
-
-      - name: Comment on PR (if Dependabot)
-        if: success() && github.actor == 'dependabot[bot]'
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ✅ Dependency PR checks passed. Tests successful.
