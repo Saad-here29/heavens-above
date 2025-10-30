@@ -1,28 +1,37 @@
-name: Scheduled Maintenance Tasks
+name: Scheduled Maintenance
 
+# Allow both scheduled runs and manual trigger for testing
 on:
   schedule:
-    # Runs every day at midnight (00:00 UTC)
-    - cron: '0 0 * * *'
-  workflow_dispatch:  # allows manual trigger
+    - cron: '0 0 * * *'   # daily at 00:00 UTC
+  workflow_dispatch:      # allows manual run from Actions UI
+  push:
+    branches:
+      - Assignment02_GithubActions  # optional: allows push-trigger when working in this branch for quick tests
 
 jobs:
   maintenance:
+    name: Run maintenance and upload logs
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run maintenance script
+      - name: Create maintenance log
         run: |
-          echo "Starting daily maintenance..."
-          mkdir -p reports
-          echo "Maintenance completed successfully on $(date)" > reports/maintenance_log.txt
-          echo "Report generated at $(date)"
+          echo "Maintenance run at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")" > maintenance.log
+          echo "Repository: $GITHUB_REPOSITORY" >> maintenance.log
+          echo "Ref: $GITHUB_REF" >> maintenance.log
+          echo "Commit: $GITHUB_SHA" >> maintenance.log
+          echo "Files changed (top 20):" >> maintenance.log
+          git --no-pager log -n 1 --pretty=format:"%H %s" >> maintenance.log || true
+          git status --porcelain | sed -n '1,20p' >> maintenance.log || true
+          echo "" >> maintenance.log
+          echo "Sample maintenance task: listing root files:" >> maintenance.log
+          ls -la | sed -n '1,200p' >> maintenance.log
 
-      - name: Upload maintenance log
+      - name: Upload maintenance log artifact
         uses: actions/upload-artifact@v4
         with:
           name: maintenance-log
-          path: reports/maintenance_log.txt
+          path: maintenance.log
