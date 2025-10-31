@@ -1,0 +1,25 @@
+name: Generate Release Notes
+
+on:
+  release:
+    types: [created]   # Runs when a new release is created
+  workflow_dispatch: {} # Allows manual triggering
+
+jobs:
+  generate-release-notes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate release notes
+        id: notes
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Display confirmation
+        run: echo "✅ Release notes generated successfully!"
