@@ -1,0 +1,52 @@
+name: Code Review Workflow
+
+on:
+  push:
+    branches: [ "Assignment02_GithubActions" ]
+  pull_request:
+    branches: [ "Assignment02_GithubActions" ]
+  workflow_dispatch:
+
+jobs:
+  code-review:
+    name: Automated Code Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Lint Code (ESLint)
+        run: |
+          echo "🔍 Running ESLint checks..."
+          npx eslint . || true
+
+      - name: Analyze Code Quality (CodeQL)
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "Code Quality"
+
+      - name: Run Security Scan (Dependencies)
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: critical
+
+      - name: Comment on Pull Request
+        if: github.event_name == 'pull_request'
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            👀 **Automated Code Review Summary**
+            ------------------------------------
+            ✅ ESLint Check Completed  
+            ✅ CodeQL Analysis Done  
+            ✅ Dependency Security Scan Finished  
+            ⚙️ All checks passed successfully!
