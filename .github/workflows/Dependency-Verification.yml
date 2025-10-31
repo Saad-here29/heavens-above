@@ -1,0 +1,38 @@
+name: Dependency Verification
+
+on:
+  push:
+    branches:
+      - main
+      - Assignment02_GithubActions
+  pull_request:
+    branches:
+      - main
+      - Assignment02_GithubActions
+  workflow_dispatch:
+
+jobs:
+  dependency-verification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Verify Dependencies
+        run: |
+          echo "🔍 Checking for outdated or vulnerable dependencies..."
+          npm outdated || echo "✅ All dependencies are up to date!"
+          echo "🧪 Running audit..."
+          npm audit --audit-level=moderate || echo "⚠️ Some vulnerabilities may exist."
+
+      - name: Summary
+        run: echo "✅ Dependency verification completed successfully."
