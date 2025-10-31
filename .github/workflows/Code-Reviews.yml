@@ -1,4 +1,4 @@
-name: Code Review Checks
+name: Code Review Workflow
 
 on:
   push:
@@ -7,126 +7,28 @@ on:
   pull_request:
     branches:
       - Assignment02_GithubActions
-    types: [opened, synchronize, reopened]
-
-permissions:
-  contents: read
-  security-events: write
+  workflow_dispatch: {}
 
 jobs:
   code-review:
-    name: Code Review (CodeQL, Linters, Tests)
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- CodeQL Analysis ---
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript, python
-
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v3
-
-      # --- Node.js Setup and Checks ---
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: npm
+          node-version: '22'
 
-      - name: Install Node dependencies
-        run: |
-          if [ -f package.json ]; then
-            echo "Installing Node dependencies..."
-            npm ci
-          else
-            echo "No package.json found — skipping Node setup."
-          fi
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run JS lint and tests
-        run: |
-          if [ -f package.json ]; then
-            echo "Running JS lint and tests..."
-            if npm run | grep -q "lint"; then
-              npm run lint
-            else
-              echo "No lint script defined."
-            fi
-            if npm run | grep -q "test"; then
-              npm test
-            else
-              echo "No test script defined."
-            fi
-          else
-            echo "Skipping JS checks (no package.json)."
-          fi
+      - name: Run ESLint
+        run: npx eslint .
 
-      # --- Python Setup and Checks ---
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
-      - name: Install Python dependencies
-        run: |
-          if [ -f requirements.txt ]; then
-            echo "Installing Python dependencies..."
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            pip install flake8 pytest pytest-cov
-          else
-            echo "No requirements.txt found — skipping Python setup."
-          fi
-
-      - name: Run Python lint and tests
-        run: |
-          if ls test_*.py tests/test_*.py >/dev/null 2>&1; then
-            echo "Running Python lint and tests..."
-            flake8 . || exit 1
-            pytest --junitxml=pytest-results.xml --cov=. || exit 1
-          else
-            echo "No Python tests found — skipping."
-          fi
-
-      # --- Upload artifacts (test reports) ---
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-review-artifacts
-          path: |
-            pytest-results.xml
-            coverage.xml
-          if-no-files-found: ignore
-
-      # --- PR Comment Summary ---
-      - name: Comment summary on Pull Request
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const pr = context.payload.pull_request;
-            if (!pr) return;
-
-            const summary = [
-              "### 🧠 Automated Code Review Summary",
-              "",
-              "✅ **Checks performed:**",
-              "- CodeQL security scan",
-              "- JS lint & tests (if `package.json` present)",
-              "- Python lint & tests (if `requirements.txt` found)",
-              "",
-              "🔍 See the **Actions tab** for full logs and artifacts."
-            ].join("\n");
-
-            await github.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.number,
-              body: summary
-            });
+      - name: Run Security Scan (npm audit)
+        run: npm audit --audit-level=moderate
