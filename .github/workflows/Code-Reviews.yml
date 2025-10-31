@@ -7,13 +7,15 @@ on:
   pull_request:
     branches:
       - Assignment02_GithubActions
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   code-review:
+    name: Code Review (Lint + CodeQL)
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -24,11 +26,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-        #name: Run ESLint
+       #name: Run ESLint
         #run: npx eslint .
 
-      - name: Run CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      # ✅ CodeQL Steps
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
 
-      - name: Run Security Scan (npm audit)
-        run: npm audit --audit-level=moderate
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
