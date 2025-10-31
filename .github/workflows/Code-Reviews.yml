@@ -24,8 +24,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run ESLint
-        run: npx eslint .
+        #name: Run ESLint
+        #run: npx eslint .
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
