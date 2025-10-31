@@ -1,11 +1,14 @@
 name: Dependency Verification Workflow
 
 on:
+  push:
+    branches:
+      - Assignment02_GithubActions
   pull_request:
-    types: [opened, synchronize]
     branches:
       - Assignment02_GithubActions
   workflow_dispatch: {}
+
 
 jobs:
   verify-dependencies:
